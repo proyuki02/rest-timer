@@ -1,6 +1,6 @@
 const electron = require("electron");
 const { app, BrowserWindow, Menu, Tray, nativeImage, remote } = electron;
-const storage = require('electron-json-storage');
+const storage = require("electron-json-storage-sync");
 let mainWindow = null;
 let trayIcon = null;
 let fullFlag = false;
@@ -11,10 +11,10 @@ function getRest() {
 
   let hh, mm;
   if (now.getHours() < 12) {
-    hh = 2;
-    mm = 30;
+    hh = 12;
+    mm = 0;
   } else {
-    hh = 22;
+    hh = 17;
     mm = 30;
   }
 
@@ -44,13 +44,15 @@ function full() {
 function reset() {
   fullFlag = false;
   showFlag = false;
-  mainWindow.unmaximize();
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+  }
   mainWindow.setAlwaysOnTop(false);
 }
 
 function clock() {
   if (mainWindow !== null) {
-    const rest = getRest();
+    let rest = getRest();
 
     // 残り3分になったら
     if (rest < 3 * 60 && !showFlag) {
@@ -64,64 +66,22 @@ function clock() {
       fullFlag = true;
     }
 
+    // リセットされるまでマイナスを通知する
+    if (fullFlag) {
+      rest = -1;
+    }
+
     // 画面側に通知
     mainWindow.webContents.send("clock", rest);
   }
 
-  // 次の「0ミリ秒」に実行されるよう、次の描画処理を予約
+  // 次の描画処理を予約
   var delay = 1000 - new Date().getMilliseconds();
   setTimeout(clock, delay);
 }
 
-app.on("window-all-closed", function() {
-  if (process.platform != "darwin") {
-    app.quit();
-  }
-});
-
-app.on("ready", function() {
-  mainWindow = new BrowserWindow({
-    // ウィンドウ作成時のオプション
-    width: 1800,
-    height: 500,
-    // ウィンドウの背景を透過
-    transparent: true,
-    // 枠の無いウィンドウ
-    frame: false,
-    // ウィンドウのリサイズを禁止
-    resizable: false,
-    // タスクバーに表示しない
-    skipTaskbar: true,
-    // アプリ起動時にウィンドウを表示しない
-    // show: false
-  });
-  mainWindow.on("closed", function() {
-    mainWindow = null;
-  });
-
-  // index.html を開く
-  mainWindow.loadURL("file://" + __dirname + "/index.html");
-
-  // ウィンドウ位置を復元
-  storage.get('config.json', function(error, data) {
-    console.log(data);
-    if (!error && data.windowPosition) {
-      const pos = JSON.parse(data.windowPosition);
-      mainWindow.setPosition(pos[0], pos[1]);
-    }
-  });
-  mainWindow.on("close", function() {
-    const data = {
-      windowPosition: JSON.stringify(mainWindow.getPosition())
-    };
-    storage.set("config.json", data, function(error) {});
-  });
-
-  // タスクトレイに格納
-  trayIcon = new Tray(nativeImage.createFromPath(__dirname + "/icon.png"));
-
-  // タスクトレイに右クリックメニューを追加
-  const contextMenu = Menu.buildFromTemplate([
+function getContextMenu() {
+  const menu = Menu.buildFromTemplate([
     {
       label: "表示する",
       click: function() {
@@ -147,17 +107,60 @@ app.on("ready", function() {
       }
     }
   ]);
-  trayIcon.setContextMenu(contextMenu);
+  return menu;
+}
 
-  // タスクトレイのツールチップ
+function positionSetting(win) {
+  const result = storage.get("config");
+  console.log(result);
+  if (result.status && result.data.windowPosition) {
+    const pos = JSON.parse(result.data.windowPosition);
+    win.setPosition(pos[0], pos[1]);
+  }
+  win.on("move", function() {
+    const data = {
+      windowPosition: JSON.stringify(win.getPosition())
+    };
+    storage.set("config", data);
+  });
+}
+
+app.on("window-all-closed", function() {
+  if (process.platform != "darwin") {
+    app.quit();
+  }
+});
+
+app.on("ready", function() {
+  mainWindow = new BrowserWindow({
+    width: 180,
+    height: 50,
+    // ウィンドウの背景を透過
+    transparent: true,
+    // 枠の無いウィンドウ
+    frame: false,
+    // ウィンドウのリサイズを禁止
+    resizable: false,
+    // タスクバーに表示しない
+    skipTaskbar: true,
+    // アプリ起動時にウィンドウを表示しない
+    show: false
+  });
+  mainWindow.on("closed", function() {
+    mainWindow = null;
+  });
+  mainWindow.loadURL("file://" + __dirname + "/index.html");
+
+  // ウィンドウ位置の復元・保存
+  positionSetting(mainWindow);
+
+  // タスクトレイの設定
+  trayIcon = new Tray(nativeImage.createFromPath(__dirname + "/icon.png"));
+  trayIcon.setContextMenu(getContextMenu());
   trayIcon.setToolTip("Rest Timer");
-
-  // タスクトレイクリック
   trayIcon.on("click", function() {
     show();
   });
-
-  // タスクトレイダブルクリック
   trayIcon.on("double-click", function() {
     reset();
   });
