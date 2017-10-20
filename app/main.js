@@ -5,6 +5,7 @@ let mainWindow = null;
 let trayIcon = null;
 let fullFlag = false;
 let showFlag = false;
+let isShowing = false;
 
 function getRest() {
   const now = new Date();
@@ -33,6 +34,12 @@ function getRest() {
 function show() {
   mainWindow.show();
   mainWindow.focus();
+  isShowing = true;
+}
+
+function hide() {
+  mainWindow.hide();
+  isShowing = false;
 }
 
 function full() {
@@ -91,7 +98,7 @@ function getContextMenu() {
     {
       label: "隠す",
       click: function() {
-        mainWindow.hide();
+        hide();
       }
     },
     {
@@ -112,7 +119,6 @@ function getContextMenu() {
 
 function positionSetting(win) {
   const result = storage.get("config");
-  console.log(result);
   if (result.status && result.data.windowPosition) {
     const pos = JSON.parse(result.data.windowPosition);
     win.setPosition(pos[0], pos[1]);
@@ -159,7 +165,11 @@ app.on("ready", function() {
   trayIcon.setContextMenu(getContextMenu());
   trayIcon.setToolTip("Rest Timer");
   trayIcon.on("click", function() {
-    show();
+    if (isShowing) {
+      hide();
+    } else {
+      show();
+    }
   });
   trayIcon.on("double-click", function() {
     reset();
