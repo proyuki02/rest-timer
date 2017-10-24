@@ -4,12 +4,14 @@ body {
   overflow: hidden;
   margin: 0;
   padding: 0;
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+}
+
+.normal {
   border: 5px solid rgb(42, 42, 42);
   background-color: rgba(24, 24, 24, 0.7);
   box-shadow: 0 0 8px 3px #000 inset;
-
-  -webkit-app-region: drag;
-  -webkit-user-select: none;
 }
 
 .warn {

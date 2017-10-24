@@ -1,17 +1,26 @@
 const electron = require("electron");
 const { app, BrowserWindow, Menu, Tray, nativeImage, remote } = electron;
 const storage = require("electron-json-storage-sync");
+const winWidth = 180;
+const winHeight = 50;
 let mainWindow = null;
 let trayIcon = null;
 let fullFlag = false;
 let showFlag = false;
+let morningFlag = false;
 let isShowing = false;
+
+setMorningFlag();
+
+function setMorningFlag() {
+  morningFlag = new Date().getHours() < 12;
+}
 
 function getRest() {
   const now = new Date();
 
   let hh, mm;
-  if (now.getHours() < 12) {
+  if (morningFlag) {
     hh = 12;
     mm = 0;
   } else {
@@ -54,7 +63,9 @@ function reset() {
   if (mainWindow.isMaximized()) {
     mainWindow.unmaximize();
   }
+  mainWindow.setSize(winWidth, winHeight);
   mainWindow.setAlwaysOnTop(false);
+  setMorningFlag();
 }
 
 function clock() {
@@ -83,8 +94,7 @@ function clock() {
   }
 
   // 次の描画処理を予約
-  var delay = 1000 - new Date().getMilliseconds();
-  setTimeout(clock, delay);
+  setTimeout(clock, 1000);
 }
 
 function getContextMenu() {
@@ -139,8 +149,8 @@ app.on("window-all-closed", function() {
 
 app.on("ready", function() {
   mainWindow = new BrowserWindow({
-    width: 180,
-    height: 50,
+    width: winWidth,
+    height: winHeight,
     // ウィンドウの背景を透過
     transparent: true,
     // 枠の無いウィンドウ

@@ -15,6 +15,8 @@ function updateDigitalClock(rest) {
     document.body.className = "alert";
   } else if (rest < 3 * 60) {
     document.body.className = "warn";
+  } else {
+    document.body.className = "normal";
   }
 
   // 表示する文字
