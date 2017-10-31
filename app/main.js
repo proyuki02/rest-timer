@@ -65,6 +65,7 @@ function reset() {
   }
   mainWindow.setSize(winWidth, winHeight);
   mainWindow.setAlwaysOnTop(false);
+  loadPosition(mainWindow);
   setMorningFlag();
 }
 
@@ -127,17 +128,24 @@ function getContextMenu() {
   return menu;
 }
 
-function positionSetting(win) {
+function loadPosition(win) {
   const result = storage.get("config");
   if (result.status && result.data.windowPosition) {
     const pos = JSON.parse(result.data.windowPosition);
     win.setPosition(pos[0], pos[1]);
   }
+}
+
+function positionSetting(win) {
+  loadPosition(win);
   win.on("move", function() {
-    const data = {
-      windowPosition: JSON.stringify(win.getPosition())
-    };
-    storage.set("config", data);
+    const pos = win.getPosition();
+    if (pos[0] !== 0 && pos[1] !== 0) {
+      const data = {
+        windowPosition: JSON.stringify(pos)
+      };
+      storage.set("config", data);
+    }
   });
 }
 
