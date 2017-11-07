@@ -67,6 +67,7 @@ function reset() {
   mainWindow.setAlwaysOnTop(false);
   loadPosition(mainWindow);
   setMorningFlag();
+  hide();
 }
 
 function clock() {
