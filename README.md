@@ -1,5 +1,7 @@
 # Rest Timer
 
+![Rest Timer](https://user-images.githubusercontent.com/40527123/184806719-8e575180-9627-418a-b671-7c26984e422c.png)
+
 ## 概要
 昼休み、および定時になったらお知らせするアプリです。
 
